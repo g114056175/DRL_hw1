@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DRL HW1 — Grid World</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --accent: #6c63ff;
+      --accent2: #00d4aa;
+      --text: #e2e8f0;
+      --text-muted: #8892a4;
+      --start: #22c55e;
+      --end: #ef4444;
+      --obstacle: #64748b;
+      --cell-default: #1e2235;
+      --cell-border: #2d3554;
+      --radius: 10px;
+      --transition: .2s cubic-bezier(.4,0,.2,1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #1a1d27 0%, #12152a 100%);
+      border-bottom: 1px solid #2d3554;
+      padding: 18px 40px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    header .logo {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    header h1 { font-size: 1.2rem; font-weight: 700; }
+    header span { color: var(--text-muted); font-size: .85rem; }
+
+    /* ── Layout ── */
+    main {
+      flex: 1;
+      display: flex;
+      gap: 28px;
+      padding: 28px 40px;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* ── Control Panel ── */
+    .panel {
+      width: 280px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--cell-border);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+    .card h2 {
+      font-size: .8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    /* slider */
+    .slider-wrap { display: flex; align-items: center; gap: 12px; }
+    input[type=range] {
+      flex: 1; -webkit-appearance: none; appearance: none;
+      height: 6px; border-radius: 3px;
+      background: var(--surface2); outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--accent); cursor: pointer;
+      box-shadow: 0 0 0 4px rgba(108,99,255,.2);
+      transition: box-shadow var(--transition);
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      box-shadow: 0 0 0 8px rgba(108,99,255,.25);
+    }
+    .n-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.3rem; font-weight: 700;
+      color: var(--accent);
+      min-width: 28px; text-align: center;
+    }
+
+    /* legend */
+    .legend { display: flex; flex-direction: column; gap: 8px; }
+    .legend-item { display: flex; align-items: center; gap: 10px; font-size: .85rem; }
+    .dot {
+      width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .dot.start  { background: var(--start); }
+    .dot.end    { background: var(--end); }
+    .dot.obs    { background: var(--obstacle); }
+    .dot.plain  { background: var(--cell-default); border: 1px solid var(--cell-border); }
+
+    /* status badge */
+    .status-badge {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 14px;
+      background: var(--surface2);
+      border-radius: 8px;
+      font-size: .85rem;
+    }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent2);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* counter */
+    .counter-row { display: flex; justify-content: space-between; font-size: .85rem; margin-top: 4px; }
+    .counter-row span { color: var(--text-muted); }
+    .counter-row b   { color: var(--accent2); font-family: 'JetBrains Mono', monospace; }
+
+    /* buttons */
+    .btn {
+      width: 100%; padding: 12px;
+      border: none; border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: .9rem; font-weight: 600;
+      cursor: pointer; transition: all var(--transition);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #8b83ff);
+      color: #fff;
+    }
+    .btn-primary:hover  { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(108,99,255,.4); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--cell-border);
+      margin-top: 8px;
+    }
+    .btn-secondary:hover { background: #2d3554; }
+
+    /* ── Grid Area ── */
+    .grid-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    #grid-container {
+      display: inline-grid;
+      gap: 6px;
+      padding: 18px;
+      background: var(--surface);
+      border: 1px solid var(--cell-border);
+      border-radius: 14px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.4);
+    }
+
+    .cell {
+      width: 80px; height: 80px;
+      background: var(--cell-default);
+      border: 2px solid var(--cell-border);
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      transition: background var(--transition), border-color var(--transition), transform var(--transition);
+      position: relative;
+      user-select: none;
+    }
+    .cell:hover:not(.locked) {
+      border-color: var(--accent);
+      transform: scale(1.04);
+      z-index: 2;
+    }
+
+    .cell.start {
+      background: rgba(34,197,94,.22);
+      border-color: var(--start);
+    }
+    .cell.end {
+      background: rgba(239,68,68,.22);
+      border-color: var(--end);
+    }
+    .cell.obstacle {
+      background: rgba(100,116,139,.28);
+      border-color: var(--obstacle);
+    }
+    .cell.locked { cursor: default; }
+
+    .cell-label {
+      font-size: 1.5rem;
+      line-height: 1;
+    }
+    .cell-arrow {
+      font-size: 1.4rem;
+      line-height: 1;
+    }
+    .cell-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .65rem;
+      color: var(--text-muted);
+      line-height: 1;
+    }
+    .cell-coord {
+      position: absolute;
+      top: 3px; left: 5px;
+      font-size: .55rem;
+      color: rgba(255,255,255,.18);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Toast */
+    #toast {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+      background: var(--surface2);
+      border: 1px solid var(--cell-border);
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: .85rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s;
+      z-index: 999;
+    }
+    #toast.show { opacity: 1; }
+
+    /* Loading spinner */
+    .spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* result info bar */
+    #result-bar {
+      width: 100%;
+      max-width: 600px;
+      background: var(--surface);
+      border: 1px solid var(--cell-border);
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-size: .85rem;
+      display: none;
+    }
+    #result-bar.show { display: block; }
+    #result-bar .rb-title { color: var(--accent2); font-weight: 600; margin-bottom: 4px; }
+
+    @media (max-width: 800px) {
+      main { flex-direction: column; padding: 16px; }
+      .panel { width: 100%; }
+      .cell { width: 58px; height: 58px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🤖</div>
+  <div>
+    <h1>DRL HW1 — Grid World</h1>
+    <span>Policy Evaluation on nxn Grid Map</span>
+  </div>
+</header>
+
+<main>
+  <!-- ── Control Panel ── -->
+  <aside class="panel">
+
+    <!-- Grid Size -->
+    <div class="card">
+      <h2>Grid Size</h2>
+      <div class="slider-wrap">
+        <input type="range" id="n-slider" min="5" max="9" value="5" />
+        <div class="n-val" id="n-display">5</div>
+      </div>
+      <div class="counter-row" style="margin-top:8px">
+        <span>Obstacles allowed</span>
+        <b id="obs-max">3</b>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="card">
+      <h2>Cell Types</h2>
+      <div class="legend">
+        <div class="legend-item"><div class="dot start">S</div> Start (click 1st)</div>
+        <div class="legend-item"><div class="dot end">G</div> Goal (click 2nd)</div>
+        <div class="legend-item"><div class="dot obs"></div> Obstacle (up to n−2)</div>
+        <div class="legend-item"><div class="dot plain"></div> Free cell</div>
+      </div>
+    </div>
+
+    <!-- Status -->
+    <div class="card">
+      <h2>Status</h2>
+      <div class="status-badge">
+        <div class="status-dot" id="status-dot"></div>
+        <span id="status-text">Click a cell to set Start</span>
+      </div>
+      <div class="counter-row" style="margin-top:10px">
+        <span>Obstacles placed</span>
+        <b id="obs-count">0</b>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="card" style="display:flex;flex-direction:column;gap:0">
+      <h2>Actions</h2>
+      <button class="btn btn-primary" id="eval-btn" disabled>
+        ▶ Generate Policy &amp; Evaluate
+      </button>
+      <button class="btn btn-secondary" id="reset-btn">↺ Reset</button>
+    </div>
+
+  </aside>
+
+  <!-- ── Grid Area ── -->
+  <section class="grid-area">
+    <div id="grid-container"></div>
+    <div id="result-bar">
+      <div class="rb-title">✅ Policy Evaluation Complete</div>
+      <div id="result-desc"></div>
+    </div>
+  </section>
+</main>
+
+<div id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────
+let n = 5;
+let startCell = null;
+let endCell   = null;
+let obstacles = new Set();
+let evaluated = false;
+let policyData = null;
+let valueData  = null;
+
+// ── Helpers ─────────────────────────────────────────
+const key  = (r, c) => `${r},${c}`;
+const parseKey = k => k.split(',').map(Number);
+const $ = id => document.getElementById(id);
+
+function showToast(msg, dur = 2000) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+function updateStatus(text) {
+  $('status-text').textContent = text;
+}
+
+function updateEvalBtn() {
+  $('eval-btn').disabled = !(startCell && endCell);
+}
+
+// ── Build Grid ──────────────────────────────────────
+function buildGrid() {
+  const container = $('grid-container');
+  container.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+  container.innerHTML = '';
+
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.r = r;
+      cell.dataset.c = c;
+      cell.id = `cell-${key(r, c)}`;
+
+      const coord = document.createElement('div');
+      coord.className = 'cell-coord';
+      coord.textContent = `${r},${c}`;
+      cell.appendChild(coord);
+
+      cell.addEventListener('click', onCellClick);
+      container.appendChild(cell);
+    }
+  }
+  refreshAllCells();
+}
+
+// ── Cell click logic ────────────────────────────────
+function onCellClick(e) {
+  if (evaluated) return;   // locked after evaluation
+
+  const r = parseInt(this.dataset.r);
+  const c = parseInt(this.dataset.c);
+  const k = key(r, c);
+
+  // Toggle start
+  if (!startCell) {
+    startCell = k;
+    updateStatus('Click a different cell to set Goal');
+    showToast('✅ Start set!');
+  }
+  // Toggle end (must be different from start)
+  else if (!endCell) {
+    if (k === startCell) { showToast('⚠️ Goal must differ from Start'); return; }
+    endCell = k;
+    const obsMax = n - 2;
+    updateStatus(`Click cells to add obstacles (max ${obsMax})`);
+    showToast('🎯 Goal set!');
+  }
+  // Remove start/end/obstacle by re-clicking
+  else if (k === startCell) {
+    startCell = null;
+    obstacles.clear();
+    endCell = null;
+    updateStatus('Click a cell to set Start');
+  }
+  else if (k === endCell) {
+    endCell = null;
+    obstacles.clear();
+    updateStatus('Click a different cell to set Goal');
+  }
+  else if (obstacles.has(k)) {
+    obstacles.delete(k);
+  }
+  else {
+    const obsMax = n - 2;
+    if (obstacles.size >= obsMax) {
+      showToast(`⚠️ Max ${obsMax} obstacles for n=${n}`);
+      return;
+    }
+    obstacles.add(k);
+  }
+
+  $('obs-count').textContent = obstacles.size;
+  updateEvalBtn();
+  refreshAllCells();
+}
+
+// ── Refresh cell visuals ─────────────────────────────
+function refreshAllCells() {
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) {
+      const k   = key(r, c);
+      const el  = $(`cell-${k}`);
+      if (!el) continue;
+
+      // Remove state classes
+      el.classList.remove('start','end','obstacle','locked');
+
+      // Clear dynamic children (keep coord)
+      while (el.children.length > 1) el.removeChild(el.lastChild);
+
+      if (k === startCell) {
+        el.classList.add('start');
+        addLabel(el, '🟢', 'S');
+      } else if (k === endCell) {
+        el.classList.add('end');
+        addLabel(el, '🔴', 'G');
+      } else if (obstacles.has(k)) {
+        el.classList.add('obstacle');
+        addLabel(el, '⬛', '');
+      } else if (evaluated && policyData && valueData) {
+        const arrow = policyData[k] || '';
+        const val   = valueData[k] !== undefined ? valueData[k] : '';
+        addArrowValue(el, arrow, val);
+      }
+
+      if (evaluated) el.classList.add('locked');
+    }
+  }
+}
+
+function addLabel(el, emoji, text) {
+  const lbl = document.createElement('div');
+  lbl.className = 'cell-label';
+  lbl.textContent = emoji;
+  el.appendChild(lbl);
+  if (text) {
+    const t = document.createElement('div');
+    t.className = 'cell-value';
+    t.textContent = text;
+    el.appendChild(t);
+  }
+}
+
+function addArrowValue(el, arrow, val) {
+  if (arrow) {
+    const a = document.createElement('div');
+    a.className = 'cell-arrow';
+    a.textContent = arrow;
+    el.appendChild(a);
+  }
+  if (val !== '') {
+    const v = document.createElement('div');
+    v.className = 'cell-value';
+    v.textContent = typeof val === 'number' ? val.toFixed(2) : val;
+    // Colour hint: closer to 0 is greener
+    const norm = Math.min(1, Math.abs(val) / 10);
+    v.style.color = `hsl(${Math.round(160 - norm * 120)},70%,60%)`;
+    el.appendChild(v);
+  }
+}
+
+// ── Evaluate ────────────────────────────────────────
+$('eval-btn').addEventListener('click', async () => {
+  if (!startCell || !endCell) return;
+
+  const btn = $('eval-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Evaluating…';
+
+  const payload = {
+    n,
+    start: parseKey(startCell),
+    end:   parseKey(endCell),
+    obstacles: [...obstacles].map(parseKey)
+  };
+
+  try {
+    const res  = await fetch('/evaluate', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    policyData = data.policy;
+    valueData  = data.values;
+    evaluated  = true;
+
+    refreshAllCells();
+    showResultBar();
+    showToast('🎉 Evaluation complete!');
+  } catch (err) {
+    showToast('❌ Server error: ' + err.message);
+    btn.disabled = false;
+    btn.textContent = '▶ Generate Policy & Evaluate';
+  }
+});
+
+function showResultBar() {
+  const bar = $('result-bar');
+  bar.classList.add('show');
+
+  // Find min/max V
+  const vals = Object.values(valueData).filter(v => typeof v === 'number');
+  const minV = Math.min(...vals).toFixed(3);
+  const maxV = Math.max(...vals).toFixed(3);
+
+  $('result-desc').innerHTML =
+    `Grid: <b>${n}×${n}</b> &nbsp;|&nbsp; ` +
+    `Obstacles: <b>${obstacles.size}</b> &nbsp;|&nbsp; ` +
+    `V range: <b>${minV}</b> ~ <b>${maxV}</b>`;
+
+  const btn = $('eval-btn');
+  btn.textContent = '✅ Evaluated';
+}
+
+// ── Reset ────────────────────────────────────────────
+$('reset-btn').addEventListener('click', () => {
+  startCell = null;
+  endCell   = null;
+  obstacles.clear();
+  evaluated = false;
+  policyData = null;
+  valueData  = null;
+
+  $('obs-count').textContent = '0';
+  $('result-bar').classList.remove('show');
+  updateStatus('Click a cell to set Start');
+  updateEvalBtn();
+  buildGrid();
+  showToast('↺ Reset complete');
+});
+
+// ── Slider ───────────────────────────────────────────
+$('n-slider').addEventListener('input', function () {
+  n = parseInt(this.value);
+  $('n-display').textContent = n;
+  $('obs-max').textContent = n - 2;
+
+  // Reset on size change
+  startCell = null; endCell = null; obstacles.clear();
+  evaluated = false; policyData = null; valueData = null;
+  $('obs-count').textContent = '0';
+  $('result-bar').classList.remove('show');
+  updateStatus('Click a cell to set Start');
+  updateEvalBtn();
+  buildGrid();
+});
+
+// ── Init ─────────────────────────────────────────────
+buildGrid();
+</script>
+</body>
+</html>
