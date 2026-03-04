@@ -69,7 +69,9 @@ HW1-2: 策略顯示與價值評估
 並且每次我下完要求後就自動更新 你操作後再補上一次你的操作的簡介
 
 [AI 回應與操作摘要]
-- 建立 conversation.log（補齊完整對話記錄）
-- 重新啟動 Flask server（改用 py 指令）
-- 進行瀏覽器 UI 驗證
-
+- 建立 conversation.log（補齊完整對話記錄，含前兩輪對話）
+- 修正 .gitignore 讓 conversation.log 可被 git 追蹤
+- 重新啟動 Flask server（py app.py，port 5000 正常運行）
+- 瀏覽器驗證：7x7 grid、Start/Goal/Obstacle 設定、Policy Evaluation 全部通過
+  - V 值範圍：-10.000 ~ 0.000（Goal cell = 0，其餘隨策略遞減）
+- git commit + push 到 GitHub（conversation.log 已上傳）
