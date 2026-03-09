@@ -1484,7 +1484,6 @@
     $('n-slider').addEventListener('input', function () {
       n = +this.value;
       $('n-display').textContent = n;
-      $('obs-max').textContent = n * n - 2;
 
       stopAuto();
       startCell = null; endCell = null; obstacles.clear();
@@ -1500,7 +1499,6 @@
     });
 
     // ── Init ─────────────────────────────────────────────────
-    $('obs-max').textContent = n * n - 2;
     setActiveMode('start');
     buildGrid();
   </script>
