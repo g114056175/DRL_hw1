@@ -21,11 +21,7 @@ An interactive **nxn Grid World** web application built with **Flask** and purel
 
 ## 🚀 Live Demo
 
-> **To view the Live Demo locally:**
-> 1. Run the Flask server: `python app.py`
-> 2. Open your browser and navigate to: **http://localhost:5000**
-> 
-> *(Future Web Deployment)*: [Live Demo (GitHub Pages)](https://g114056175.github.io/DRL_hw1/)
+> **[Live Demo](https://drl-hw1.onrender.com/)** *(Deployed on Render)*
 
 ---
 
