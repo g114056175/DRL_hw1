@@ -1,3 +1,12 @@
+---
+title: DRL Hw1 Demo
+emoji: 📈
+colorFrom: yellow
+colorTo: green
+sdk: docker
+pinned: false
+---
+
 # DRL HW1 — Grid World Policy Evaluation
 
 > **Course**: Deep Reinforcement Learning HW1  
