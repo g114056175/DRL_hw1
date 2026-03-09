@@ -27,6 +27,25 @@ An interactive **nxn Grid World** web application built with **Flask** and purel
 
 ---
 
+## 📸 Screenshots
+
+| 1. User Configuration | 2. Initialization |
+|:---:|:---:|
+| ![Config](img/image1.png) | ![Init](img/image2.png) |
+| *Setting grid size and placing elements* | *Initial state at Step 0* |
+
+| 3. Intermediate State | 4. Normal Result (Convergence) |
+|:---:|:---:|
+| ![Middle](img/image3.png) | ![Result](img/image4.png) |
+| *Value propagation during iterations* | *Final optimal policy and V-values* |
+
+| 5. Hot Edit Mode | 6. Branch Result |
+|:---:|:---:|
+| ![HotEdit](img/image5.png) | ![Branch](img/image6.png) |
+| *Modifying map while keeping weights* | *New convergence after modified map* |
+
+---
+
 ## 🖥️ Features
 
 ### HW1-1 — Grid Map
