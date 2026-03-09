@@ -1,75 +1,143 @@
+"""
+policy_eval.py
+--------------
+HW1-2  — Value Iteration
+  - generate_random_policy : 為 Step 0 隨機指派箭頭（初始顯示用）
+  - _derive_policy          : 從 V(s) 推導最優箭頭（argmax 方向）
+  - value_iteration_steps  : 執行 Value Iteration，回傳每步快照清單
+                              供前端逐步視覺化
+"""
+
 import random
 
 ACTIONS = ["up", "down", "left", "right"]
-ARROWS = {"up": "↑", "down": "↓", "left": "←", "right": "→"}
-DELTAS = {"up": (-1, 0), "down": (1, 0), "left": (0, -1), "right": (0, 1)}
+ARROWS  = {"up": "↑", "down": "↓", "left": "←", "right": "→"}
+DELTAS  = {"up": (-1, 0), "down": (1, 0), "left": (0, -1), "right": (0, 1)}
+
+R_STEP   = -1.0   # 每走一步的代價
+R_GOAL   = 0.0    # 踏入終點時的即時獎勵（terminal，V=0）
+GAMMA    = 0.9    # 折損係數
+THETA    = 1e-6   # 收斂閾值
+MAX_ITER = 600    # 最大迭代次數
 
 
+# ── 隨機策略（Step 0 顯示用）──────────────────────────────
 def generate_random_policy(n, obstacles, start, end):
-    """
-    Assign a random action to each non-obstacle, non-terminal cell.
-    Returns: dict { "r,c": arrow_symbol }
-    """
-    policy = {}
+    """為每個可進入的格子隨機指派箭頭，僅用於初始顯示。"""
     obstacle_set = set(map(tuple, obstacles))
+    end_t = tuple(end)
+    policy = {}
     for r in range(n):
         for c in range(n):
             cell = (r, c)
-            if cell == tuple(end):
-                policy[f"{r},{c}"] = "G"   # Goal
+            if cell == end_t:
+                policy[f"{r},{c}"] = "G"
             elif cell in obstacle_set:
-                policy[f"{r},{c}"] = "X"   # Obstacle
+                policy[f"{r},{c}"] = "X"
             else:
-                action = random.choice(ACTIONS)
-                policy[f"{r},{c}"] = ARROWS[action]
+                policy[f"{r},{c}"] = ARROWS[random.choice(ACTIONS)]
     return policy
 
 
-def policy_evaluation(n, policy, obstacles, start, end, gamma=0.9, theta=1e-6):
+# ── 從 V 推導最優策略 ────────────────────────────────────
+def _derive_policy(n, V, obstacle_set, end_t, gamma=GAMMA):
     """
-    Iterative Policy Evaluation.
-    Reward: -1 per step; reaching end = reward 0 (terminal).
-    Returns: dict { "r,c": float }
+    對每個 free cell 取 argmax_a Q(s,a)，回傳最優箭頭字典。
+    使用 Q(s,a) = r(s,a) + γ·V(s') 而非直接比較 V(s')。
+    當多個方向 Q 值相同（tie）時，隨機從中選一，
+    避免第 1 步全部格子一律指向字典順序第一個方向（如 ↑）。
+    """
+    policy = {}
+    for r in range(n):
+        for c in range(n):
+            cell = (r, c)
+            if cell == end_t:
+                policy[f"{r},{c}"] = "G"
+            elif cell in obstacle_set:
+                policy[f"{r},{c}"] = "X"
+            else:
+                best_q = -float('inf')
+                tied = []
+                for action, (dr, dc) in DELTAS.items():
+                    nr, nc = r + dr, c + dc
+                    if (nr < 0 or nr >= n or nc < 0 or nc >= n or
+                            (nr, nc) in obstacle_set):
+                        nr, nc = r, c
+                    reward = R_GOAL if (nr, nc) == end_t else R_STEP
+                    q = reward + gamma * V[(nr, nc)]
+                    if q > best_q:
+                        best_q = q
+                        tied = [action]
+                    elif q == best_q:
+                        tied.append(action)
+                # tie → 隨機選一，避免固定指向字典順序第一個
+                policy[f"{r},{c}"] = ARROWS[random.choice(tied)]
+    return policy
+
+
+# ── Value Iteration（回傳所有步驟快照）──────────────────
+def value_iteration_steps(n, obstacles, start, end,
+                           initial_V=None,
+                           gamma=GAMMA, theta=THETA, max_iter=MAX_ITER):
+    """
+    執行 Value Iteration 並收集每步快照供前端逐步視覺化。
+    initial_V: 可選的初始 V 字典 {"r,c": float}，
+               若提供則從該權重隱炱跨（热修改分支用），
+               否則從全零開始。
+    更新公式：V(s) ← max_a [ r(s,a) + γ · V(s') ]
     """
     obstacle_set = set(map(tuple, obstacles))
     end_t = tuple(end)
 
-    # Map arrow → delta
-    arrow_to_delta = {v: DELTAS[k] for k, v in ARROWS.items()}
+    # 初始化 V
+    if initial_V is not None:
+        V = {(r, c): float(initial_V.get(f"{r},{c}", 0.0))
+             for r in range(n) for c in range(n)}
+    else:
+        V = {(r, c): 0.0 for r in range(n) for c in range(n)}
 
-    # Initialise V
-    V = {}
-    for r in range(n):
-        for c in range(n):
-            V[(r, c)] = 0.0
+    steps = []
 
-    # Iterative update
-    for _ in range(10000):
+    # ── 迭代（不再附加 Step 0 ，直接從第一步開始）──
+    for iteration in range(1, max_iter + 1):
+        new_V = dict(V)
         delta = 0.0
+
         for r in range(n):
             for c in range(n):
                 cell = (r, c)
                 if cell == end_t or cell in obstacle_set:
-                    continue
+                    continue  # terminal 與障礙不更新
 
-                arrow = policy.get(f"{r},{c}", "↑")
-                if arrow not in arrow_to_delta:
-                    continue
+                best = -float('inf')
+                for _, (dr, dc) in DELTAS.items():
+                    nr, nc = r + dr, c + dc
+                    if (nr < 0 or nr >= n or nc < 0 or nc >= n or
+                            (nr, nc) in obstacle_set):
+                        nr, nc = r, c
 
-                dr, dc = arrow_to_delta[arrow]
-                nr, nc = r + dr, c + dc
+                    reward = R_GOAL if (nr, nc) == end_t else R_STEP
+                    val = reward + gamma * V[(nr, nc)]
+                    if val > best:
+                        best = val
 
-                # Out of bounds or obstacle → stay in place
-                if nr < 0 or nr >= n or nc < 0 or nc >= n or (nr, nc) in obstacle_set:
-                    nr, nc = r, c
+                delta = max(delta, abs(best - V[cell]))
+                new_V[cell] = best
 
-                reward = 0.0 if (nr, nc) == end_t else -1.0
-                new_v = reward + gamma * V[(nr, nc)]
-                delta = max(delta, abs(new_v - V[cell]))
-                V[cell] = new_v
+        V = new_V
+        converged = (delta < theta)
+        policy = _derive_policy(n, V, obstacle_set, end_t, gamma)
 
-        if delta < theta:
+        steps.append({
+            "values":    {f"{r},{c}": round(V[(r, c)], 4)
+                          for r in range(n) for c in range(n)},
+            "policy":    policy,
+            "delta":     round(delta, 8),
+            "iteration": iteration,
+            "converged": converged,
+        })
+
+        if converged:
             break
 
-    # Convert to serialisable dict
-    return {f"{r},{c}": round(V[(r, c)], 3) for r in range(n) for c in range(n)}
+    return steps

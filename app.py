@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify
-from policy_eval import generate_random_policy, policy_evaluation
+from policy_eval import value_iteration_steps
 
 app = Flask(__name__)
 
@@ -9,18 +9,33 @@ def index():
     return render_template("index.html")
 
 
-@app.route("/evaluate", methods=["POST"])
-def evaluate():
-    data = request.get_json()
-    n = int(data["n"])
-    start = tuple(data["start"])   # [row, col]
-    end = tuple(data["end"])       # [row, col]
-    obstacles = [tuple(o) for o in data["obstacles"]]
+@app.route("/iterate", methods=["POST"])
+def iterate():
+    """
+    接收 Grid 設定，執行 Value Iteration，回傳完整步驟歷史供前端逐步視覺化。
+    Request JSON : { n, start:[r,c], end:[r,c], obstacles:[[r,c],...] }
+    Response JSON: { steps:[...], total:int, converged_at:int|null }
+    """
+    data           = request.get_json()
+    n              = int(data["n"])
+    start          = data["start"]
+    end            = data["end"]
+    obstacles      = data["obstacles"]
+    initial_values = data.get("initial_values")   # None for fresh run, dict for hot-edit branch
 
-    policy = generate_random_policy(n, obstacles, start, end)
-    values = policy_evaluation(n, policy, obstacles, start, end)
+    steps = value_iteration_steps(n, obstacles, start, end,
+                                   initial_V=initial_values)
 
-    return jsonify({"policy": policy, "values": values})
+    # 找出首次收斂的步驟索引
+    converged_at = next(
+        (s["iteration"] for s in steps if s["converged"]), None
+    )
+
+    return jsonify({
+        "steps":        steps,
+        "total":        len(steps),
+        "converged_at": converged_at,
+    })
 
 
 if __name__ == "__main__":

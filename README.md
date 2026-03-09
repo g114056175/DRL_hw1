@@ -1,24 +1,27 @@
 # DRL HW1 — Grid World Policy Evaluation
 
 > **Course**: Deep Reinforcement Learning HW1  
-> **Author**: [g114056175](https://github.com/g114056175)
+> **Author**: [g114056175](https://github.com/g114056175)  
+> **Develop with Antigravity**: [conversation.log](https://github.com/g114056175/DRL_hw1/blob/main/conversation.log)
 
 ---
 
 ## 📌 Overview
 
-An interactive **nxn Grid World** web application built with **Flask**.
+An interactive **nxn Grid World** web application built with **Flask** and purely Vanilla JS/HTML/CSS for the frontend.
 
 | Feature | Description |
 |---------|-------------|
-| **HW1-1** | Interactive grid map with start / goal / obstacle placement |
-| **HW1-2** | Random policy generation + iterative policy evaluation V(s) |
+| **Interactive Grid** | Dynamic grid dimensions UI with Start, Goal, and Obstacle placements. |
+| **Value Iteration Visualizer** | Step-by-step playback of the Value Iteration (RL) propagation process. |
+| **Historical Playback** | Use a slider to scrub back and forth through steps with accurate map states. |
+| **Hot Edit Branching** | Pause at any iteration step, modify the obstacles/targets, and recalculate to branch off new trajectories. |
 
 ---
 
 ## 🚀 Live Demo
 
-> Run locally (see below), or deploy to a cloud platform.
+> [Live Demo (GitHub Pages)](https://g114056175.github.io/DRL_hw1/)
 
 ---
 
@@ -33,11 +36,19 @@ An interactive **nxn Grid World** web application built with **Flask**.
   - Re-clicking a cell removes it
 - Visual feedback: dark-theme UI with smooth animations
 
-### HW1-2 — Policy & Value Evaluation
-- Press **Generate Policy & Evaluate** to:
-  1. Randomly assign ↑ ↓ ← → to every free cell
-  2. Run **iterative policy evaluation** (Bellman equation, γ=0.9)
-  3. Display arrow + V(s) value on each cell
+### HW1-2 — Value Iteration & Playback Controle
+- Press **Start Value Iteration** to:
+  1. Initialize with an empty value state array.
+  2. Run **Value Iteration** to compute the optimal path (Bellman Optimality Equation).
+  3. Store the entire progression history in memory.
+- Use the **Right Panel** to:
+  - Slide through iterations visually step-by-step.
+  - Auto-play or scrub manually.
+  
+### **🧪 Hot Edit Branching**
+- Pause at *any* intermediate step, hit **Hot Edit**.
+- Clear/Add obstacles seamlessly, hit **Run Branch**.
+- The algorithm will preserve the V-values computed up to that point, recalculate, and branch the timeline, appending new steps automatically.
 
 ---
 
@@ -60,7 +71,6 @@ pip install -r requirements.txt
 python app.py
 ```
 
-Open your browser at **http://localhost:5000**
 
 ---
 
