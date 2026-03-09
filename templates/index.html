@@ -1022,7 +1022,7 @@
       setTimeout(() => t.classList.remove('show'), dur);
     }
     function updateStatus(txt) { $('status-text').textContent = txt; }
-    function updateEvalBtn() { $('eval-btn').disabled = !(startCell && endCell); }
+    function updateEvalBtn() { $('eval-btn').disabled = !(startCell && endCell) || hotEditMode; }
 
     // ── Mode Selector ────────────────────────────────────────
     document.querySelectorAll('.mode-btn').forEach(btn => {
@@ -1263,7 +1263,7 @@
           `V range: <b>${minV} ~ ${maxV}</b>`;
         $('result-bar').classList.add('show');
 
-        $('eval-btn').textContent = '✅ VI Complete';
+        $('eval-btn').textContent = '✅ Complete';
         showToast(`🎉 計算完成！共 ${total} 步，使用右側控制瀏覽`);
 
       } catch (err) {
