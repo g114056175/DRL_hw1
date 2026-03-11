@@ -141,3 +141,98 @@ def value_iteration_steps(n, obstacles, start, end,
             break
 
     return steps
+
+
+# ── Policy Iteration（策略迭代，回傳改進步驟）────────────────
+def _policy_evaluation(n, policy, obstacles, end_t, gamma=GAMMA, theta=THETA, max_iter=200):
+    """
+    固定策略 π，不斷迭代 V 直到收斂。
+    """
+    V = {(r, c): 0.0 for r in range(n) for c in range(n)}
+    obstacle_set = set(map(tuple, obstacles))
+
+    for _ in range(max_iter):
+        new_V = dict(V)
+        delta = 0.0
+        for r in range(n):
+            for c in range(n):
+                cell = (r, c)
+                if cell == end_t or cell in obstacle_set:
+                    continue
+
+                # 根據固定策略選擇 action
+                arrow = policy[f"{r},{c}"]
+                # 逆推 action 名稱
+                action = next((a for a, sym in ARROWS.items() if sym == arrow), "up")
+                dr, dc = DELTAS[action]
+                nr, nc = r + dr, c + dc
+
+                if (nr < 0 or nr >= n or nc < 0 or nc >= n or (nr, nc) in obstacle_set):
+                    nr, nc = r, c
+
+                reward = R_GOAL if (nr, nc) == end_t else R_STEP
+                val = reward + gamma * V[(nr, nc)]
+
+                delta = max(delta, abs(val - V[cell]))
+                new_V[cell] = val
+        V = new_V
+        if delta < theta:
+            break
+    return V
+
+
+def policy_iteration_steps(n, obstacles, start, end, gamma=GAMMA, theta=THETA, max_iter=50):
+    """
+    執行完整 Policy Iteration 並收集每一步（Policy Improvement 後）的快照。
+    1. 初始化隨機策略
+    2. Loop:
+       a. Policy Evaluation (算到底)
+       b. Policy Improvement (更新所有箭頭)
+       c. 若策略不再變動則結束
+    """
+    obstacle_set = set(map(tuple, obstacles))
+    end_t = tuple(end)
+
+    # 1. 初始化隨機策略
+    current_policy = generate_random_policy(n, obstacles, start, end)
+    steps = []
+
+    # 初始快照 (Step 0)
+    steps.append({
+        "values": {f"{r},{c}": 0.0 for r in range(n) for c in range(n)},
+        "policy": current_policy.copy(),
+        "delta": None,
+        "iteration": 0,
+        "converged": False,
+        "mode": "initial"
+    })
+
+    for iteration in range(1, max_iter + 1):
+        # 2. Policy Evaluation
+        V = _policy_evaluation(n, current_policy, obstacles, end_t, gamma, theta)
+
+        # 3. Policy Improvement
+        new_policy = _derive_policy(n, V, obstacle_set, end_t, gamma)
+
+        # 檢查策略是否穩定
+        policy_stable = True
+        for k in current_policy:
+            if current_policy[k] != new_policy[k]:
+                policy_stable = False
+                break
+
+        current_policy = new_policy
+
+        steps.append({
+            "values": {f"{r},{c}": round(V[(r, c)], 4) for r in range(n) for c in range(n)},
+            "policy": current_policy.copy(),
+            "delta": 0.0,
+            "iteration": iteration,
+            "converged": policy_stable,
+            "mode": "improvement"
+        })
+
+        if policy_stable:
+            break
+
+    return steps

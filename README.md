@@ -15,7 +15,8 @@ An interactive **nxn Grid World** web application built with **Flask** and purel
 | Feature | Description |
 |---------|-------------|
 | **Interactive Grid** | Dynamic grid dimensions UI with Start, Goal, and Obstacle placements. |
-| **Value Iteration Visualizer** | Step-by-step playback of the Value Iteration (RL) propagation process. |
+| **Value & Policy Iteration** | Step-by-step playback of the Value Iteration and Policy Iteration (RL) propagation process. |
+| **Randomize Policy** | Generate a random initial policy (arrows) to start with. |
 | **Historical Playback** | Use a slider to scrub back and forth through steps with accurate map states. |
 | **Hot Edit Branching** | Pause at any iteration step, modify the obstacles/targets, and recalculate to branch off new trajectories. |
 
@@ -110,16 +111,23 @@ DRL_hw1/
 
 ---
 
-## 📐 Algorithm
+## 📐 Algorithms
 
-**Policy Evaluation (Bellman Expectation)**
+### 1. Value Iteration (Bellman Optimality Equation)
+$$V(s) \leftarrow \max_a \sum_{s', r} p(s', r|s, a) [r + \gamma V(s')]$$
+- Updates value and policy simultaneously in each step.
+- Converges when $\Delta < 1e-6$.
 
-$$V(s) = r + \gamma \cdot V(s')$$
+### 2. Policy Iteration (Policy Evaluation + Improvement)
+- **Evaluation**: $V_\pi(s) = \sum_{a} \pi(a|s) \sum_{s', r} p(s', r|s, a) [r + \gamma V_\pi(s')]$ (solved until convergence).
+- **Improvement**: $\pi'(s) = \text{argmax}_a Q^\pi(s, a)$.
+- Capture snapshots after each *Improvement* step.
 
+### Environment Constants
 - Reward per step: **−1**
 - Goal cell reward: **0** (terminal)
 - Obstacles & walls: cannot enter
-- Converges when Δ < 1e−6
+- Discount factor $\gamma$: **0.9**
 
 ---
 

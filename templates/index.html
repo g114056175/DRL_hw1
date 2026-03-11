@@ -910,7 +910,13 @@
         <button class="btn btn-primary" id="eval-btn" disabled>
           ▶ Start Value Iteration
         </button>
-        <button class="btn btn-secondary" id="reset-btn">↺ Reset</button>
+        <button class="btn btn-primary" id="policy-btn" disabled style="margin-top:7px; background:linear-gradient(135deg, #af40ff, #5b21b6)">
+          ▶ Start Policy Iteration
+        </button>
+        <button class="btn btn-secondary" id="random-policy-btn" style="margin-top:7px">
+          🎲 Randomize Policy
+        </button>
+        <button class="btn btn-secondary" id="reset-btn">↺ Reset Grid</button>
       </div>
 
     </aside>
@@ -1359,6 +1365,8 @@
 
       $('eval-btn').disabled = true;
       $('eval-btn').textContent = '▶ Start Value Iteration';
+      $('policy-btn').disabled = true;
+      $('policy-btn').textContent = '▶ Start Policy Iteration';
       // Reset hot-edit card UI
       $('btn-hot-edit').classList.remove('hidden');
       $('hot-controls').classList.add('hidden');

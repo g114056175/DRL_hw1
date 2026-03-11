@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify
-from policy_eval import value_iteration_steps
+from policy_eval import value_iteration_steps, policy_iteration_steps, generate_random_policy
 
 app = Flask(__name__)
 
@@ -36,6 +36,45 @@ def iterate():
         "total":        len(steps),
         "converged_at": converged_at,
     })
+
+
+@app.route("/policy_iterate", methods=["POST"])
+def policy_iterate():
+    """
+    執行 Policy Iteration 並回傳步驟快照。
+    """
+    data      = request.get_json()
+    n         = int(data["n"])
+    start     = data["start"]
+    end       = data["end"]
+    obstacles = data["obstacles"]
+
+    steps = policy_iteration_steps(n, obstacles, start, end)
+
+    converged_at = next(
+        (s["iteration"] for s in steps if s["converged"]), None
+    )
+
+    return jsonify({
+        "steps":        steps,
+        "total":        len(steps),
+        "converged_at": converged_at,
+    })
+
+
+@app.route("/reset_policy", methods=["POST"])
+def reset_policy():
+    """
+    隨機重新生成初始策略。
+    """
+    data      = request.get_json()
+    n         = int(data["n"])
+    start     = data["start"]
+    end       = data["end"]
+    obstacles = data["obstacles"]
+
+    policy = generate_random_policy(n, obstacles, start, end)
+    return jsonify({"policy": policy})
 
 
 if __name__ == "__main__":
