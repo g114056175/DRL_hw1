@@ -418,6 +418,12 @@
       border-color: var(--obstacle);
     }
 
+    .cell.path-highlight {
+      border-color: #f59e0b;
+      box-shadow: inset 0 0 0 2px rgba(245, 158, 11, .4);
+      z-index: 1;
+    }
+
     .cell.locked {
       cursor: default;
     }
@@ -1137,7 +1143,7 @@
           const el = $(`cell-${k}`);
           if (!el) continue;
 
-          el.classList.remove('start', 'goal', 'obstacle', 'locked');
+          el.classList.remove('start', 'goal', 'obstacle', 'locked', 'path-highlight');
           while (el.children.length > 1) el.removeChild(el.lastChild);
 
           if (k === renderStart) {
@@ -1153,6 +1159,11 @@
             const arrow = stepData.policy[k] || '';
             const val = stepData.values[k];
             addArrowValue(el, arrow, val, stepData._minV);
+            
+            // Path highlight
+            if (stepData.path && stepData.path.includes(k)) {
+              el.classList.add('path-highlight');
+            }
           }
 
           if (sliderLocked && !hotEditMode) el.classList.add('locked');

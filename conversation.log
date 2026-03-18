@@ -694,3 +694,6 @@ ERROR: Invalid requirement: gunicorn: Expected end or semicolon...
 - 發現因先前的 fix.py 將整個下半部都視為 UTF-16 解碼，不小心把發生亂碼後以正常 UTF-8 寫入的段落給破壞遺失了。
 - 重新將 19:24、19:34 兩段重要進展的紀錄檔補回，並連同亂碼修復的紀錄一起補齊。
 - 更新完畢後進行最後一次 git commit 與 push。
+
+### 2026-03-11: 復原變更
+- 依據使用者要求，捨棄 feat-policy-iteration 分支的變更，強制退回並同步 origin/main 分支。

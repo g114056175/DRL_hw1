@@ -70,9 +70,53 @@ def _derive_policy(n, V, obstacle_set, end_t, gamma=GAMMA):
                         tied = [action]
                     elif q == best_q:
                         tied.append(action)
-                # tie → 隨機選一，避免固定指向字典順序第一個
-                policy[f"{r},{c}"] = ARROWS[random.choice(tied)]
     return policy
+
+
+# ── 追蹤路徑（從起點到終點） ──────────────────────────────
+def _get_path(n, V, obstacle_set, start_t, end_t, gamma=GAMMA):
+    """
+    從起點開始，根據當前 V 值，沿著最優策略走到終點或碰到死路。
+    回傳座標列表 [(r,c), ...]。
+    """
+    path = [start_t]
+    curr = start_t
+    visited = {start_t}
+    max_steps = n * n  # 防止無限迴圈
+
+    for _ in range(max_steps):
+        if curr == end_t:
+            break
+        
+        r, c = curr
+        best_q = -float('inf')
+        best_next = None
+        
+        # 為了平衡「先左下」的偏好，我們調整方向檢查順序
+        # 順序：left, down, up, right (偏好左、下)
+        for action in ["left", "down", "up", "right"]:
+            dr, dc = DELTAS[action]
+            nr, nc = r + dr, c + dc
+            
+            if (nr < 0 or nr >= n or nc < 0 or nc >= n or
+                    (nr, nc) in obstacle_set):
+                nr, nc = r, c
+            
+            reward = R_GOAL if (nr, nc) == end_t else R_STEP
+            q = reward + gamma * V[(nr, nc)]
+            
+            if q > best_q:
+                best_q = q
+                best_next = (nr, nc)
+        
+        if best_next is None or best_next == curr or best_next in visited:
+            break
+            
+        curr = best_next
+        path.append(curr)
+        visited.add(curr)
+        
+    return [f"{r},{c}" for r, c in path]
 
 
 # ── Value Iteration（回傳所有步驟快照）──────────────────
@@ -132,6 +176,7 @@ def value_iteration_steps(n, obstacles, start, end,
             "values":    {f"{r},{c}": round(V[(r, c)], 4)
                           for r in range(n) for c in range(n)},
             "policy":    policy,
+            "path":      _get_path(n, V, obstacle_set, tuple(start), end_t, gamma),
             "delta":     round(delta, 8),
             "iteration": iteration,
             "converged": converged,
