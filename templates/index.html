@@ -1130,7 +1130,7 @@
     }
 
     // ── Refresh cell visuals ─────────────────────────────────
-    function refreshAllCells(stepData) {
+    function refreshAllCells(stepData, isLastStep = false) {
       // Use map layout from stepData if available to render historical state correctly,
       // otherwise fallback to current global edit state
       const renderStart = stepData ? stepData.startCell : startCell;
@@ -1159,9 +1159,9 @@
             const arrow = stepData.policy[k] || '';
             const val = stepData.values[k];
             addArrowValue(el, arrow, val, stepData._minV);
-            
-            // Path highlight
-            if (stepData.path && stepData.path.includes(k)) {
+
+            // Path highlight — only on final (converged) step
+            if (isLastStep && stepData.path && stepData.path.includes(k)) {
               el.classList.add('path-highlight');
             }
           }
@@ -1309,7 +1309,7 @@
         $('step-desc').textContent = `第 ${step.iteration} 步 — 擴散中…`;
       }
 
-      refreshAllCells(step);
+      refreshAllCells(step, idx === viSteps.length - 1);
       updateNavBtns(idx, total);
     }
 
