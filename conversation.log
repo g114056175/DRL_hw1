@@ -697,3 +697,20 @@ ERROR: Invalid requirement: gunicorn: Expected end or semicolon...
 
 ### 2026-03-11: 復原變更
 - 依據使用者要求，捨棄 feat-policy-iteration 分支的變更，強制退回並同步 origin/main 分支。
+
+----------------------------------------------------------
+
+[2026-03-18 11:46] USER
+
+----------------------------------------------------------
+
+在幫我修改一下(要紀錄在 conversation.log ) 幫我把起點到終點的路線用黃色框標記起來(若有多種可能 隨便選 條即可 比如先左下) 一樣同步到github/HF
+
+[AI 回應與操作摘要]
+
+- 修改 `policy_eval.py`：新增 `_get_path` 輔助函式，使用當前 V 值追蹤從起點到終點的最優路徑，並優先選擇「左、下」方向。
+- 修改 `templates/index.html`：
+  - 新增 `.path-highlight` CSS 樣式（黃色邊框與內陰影）。
+  - 更新 `refreshAllCells` 邏輯，根據後端傳回的 `path` 資料為路徑上的格子加上黃色高亮。
+- 執行 `git add`, `commit` 並 `push` 到 GitHub（自動同步至 Hugging Face Spaces）。
+- 更新 `conversation.log`。
