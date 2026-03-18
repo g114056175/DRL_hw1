@@ -1,5 +1,3 @@
-
-
 ---
 title: DRL HW1 Grid World
 emoji: 🤖
