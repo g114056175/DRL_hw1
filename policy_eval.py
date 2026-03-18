@@ -70,6 +70,7 @@ def _derive_policy(n, V, obstacle_set, end_t, gamma=GAMMA):
                         tied = [action]
                     elif q == best_q:
                         tied.append(action)
+                policy[f"{r},{c}"] = ARROWS[random.choice(tied)]
     return policy
 
 
