@@ -14,6 +14,4 @@ jobs:
           fetch-depth: 0
           lfs: true
       - name: Push to hub
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: git push --force https://g114056175:$HF_TOKEN@huggingface.co/spaces/g114056175/DRL-hw1-demo main
+        run: git push --force https://g114056175:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/g114056175/DRL-hw1-demo main
