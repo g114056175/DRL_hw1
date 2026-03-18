@@ -1,5 +1,14 @@
 
 
+---
+title: DRL HW1 Grid World
+emoji: 🤖
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+---
+
 # DRL HW1 — Grid World Policy Evaluation
 
 > **Course**: Deep Reinforcement Learning HW1  
