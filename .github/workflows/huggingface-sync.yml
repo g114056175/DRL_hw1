@@ -12,11 +12,25 @@ jobs:
         with:
           fetch-depth: 0
           lfs: true
-      - name: Push to hub
+
+      - name: Install huggingface_hub
+        run: pip install huggingface_hub
+
+      - name: Upload to Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          git config --global credential.helper store
-          echo "https://g114056175:${HF_TOKEN}@huggingface.co" > ~/.git-credentials
-          git remote add hf https://huggingface.co/spaces/g114056175/DRL-hw1-demo || true
-          git push hf main --force
+          python - <<'EOF'
+          import os
+          from huggingface_hub import HfApi
+
+          api = HfApi()
+          api.upload_folder(
+              folder_path=".",
+              repo_id="g114056175/DRL-hw1-demo",
+              repo_type="space",
+              token=os.environ["HF_TOKEN"],
+              ignore_patterns=[".git*", ".github", "__pycache__", "*.pyc", "img/"],
+          )
+          print("Upload complete!")
+          EOF
