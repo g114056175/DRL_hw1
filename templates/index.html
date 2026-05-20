@@ -916,6 +916,7 @@
         <button class="btn btn-primary" id="eval-btn" disabled>
           ▶ Start Value Iteration
         </button>
+        <button class="btn btn-secondary" id="random-eval-btn" disabled>Random Policy Evaluation</button>
         <button class="btn btn-secondary" id="reset-btn">↺ Reset</button>
       </div>
 
@@ -1028,7 +1029,11 @@
       setTimeout(() => t.classList.remove('show'), dur);
     }
     function updateStatus(txt) { $('status-text').textContent = txt; }
-    function updateEvalBtn() { $('eval-btn').disabled = !(startCell && endCell) || hotEditMode; }
+    function updateEvalBtn() {
+      const disabled = !(startCell && endCell) || hotEditMode;
+      $('eval-btn').disabled = disabled;
+      $('random-eval-btn').disabled = disabled;
+    }
 
     // ── Mode Selector ────────────────────────────────────────
     document.querySelectorAll('.mode-btn').forEach(btn => {
@@ -1287,6 +1292,81 @@
     });
 
     // ── Render a Step ────────────────────────────────────────
+    $('random-eval-btn').addEventListener('click', async () => {
+      if (!startCell || !endCell) return;
+
+      sliderLocked = true;
+      $('n-slider').disabled = true;
+      $('eval-btn').disabled = true;
+      $('random-eval-btn').disabled = true;
+      $('random-eval-btn').innerHTML = '<span class="spinner"></span>Random Policy Eval...';
+      document.querySelectorAll('.mode-btn').forEach(b => b.disabled = true);
+
+      const payload = {
+        n,
+        start: parseKey(startCell),
+        end: parseKey(endCell),
+        obstacles: [...obstacles].map(parseKey),
+      };
+
+      try {
+        const res = await fetch('/evaluate_random', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        viSteps = data.steps;
+
+        viSteps.forEach(s => {
+          const vals = Object.values(s.values).filter(v => typeof v === 'number');
+          s._minV = vals.length ? Math.min(...vals) : -10;
+          s.startCell = startCell;
+          s.endCell = endCell;
+          s.obstacles = new Set(obstacles);
+        });
+
+        const total = viSteps.length - 1;
+        $('step-slider').max = total;
+        $('step-total').textContent = total;
+        $('step-slider').value = 0;
+        currentStep = 0;
+
+        $('right-panel').classList.add('visible');
+        renderStep(0);
+
+        if (data.converged_at != null) {
+          const badge = $('converge-badge');
+          badge.textContent = `Random policy converged at iteration ${data.converged_at}`;
+          badge.classList.remove('hidden');
+        }
+
+        const lastStep = viSteps[viSteps.length - 1];
+        const vals = Object.values(lastStep.values).filter(v => typeof v === 'number');
+        const minV = Math.min(...vals).toFixed(2);
+        const maxV = Math.max(...vals).toFixed(2);
+        $('result-desc').innerHTML =
+          `Mode: <b>Random Policy Evaluation</b> &nbsp;|&nbsp; ` +
+          `Grid: <b>${n}x${n}</b> &nbsp;|&nbsp; ` +
+          `Obstacles: <b>${obstacles.size}</b> &nbsp;|&nbsp; ` +
+          `Steps: <b>${total}</b> &nbsp;|&nbsp; ` +
+          `V range: <b>${minV} ~ ${maxV}</b>`;
+        $('result-bar').classList.add('show');
+
+        $('random-eval-btn').textContent = 'Random Policy Evaluation';
+        $('eval-btn').textContent = '▶ Start Value Iteration';
+        showToast(`Random policy evaluation complete (${total} steps)`);
+
+      } catch (err) {
+        showToast('??' + err.message);
+        sliderLocked = false;
+        $('n-slider').disabled = false;
+        $('eval-btn').disabled = false;
+        $('random-eval-btn').disabled = false;
+        $('random-eval-btn').textContent = 'Random Policy Evaluation';
+      }
+    });
+
     function renderStep(idx) {
       currentStep = idx;
       const step = viSteps[idx];
@@ -1370,6 +1450,8 @@
 
       $('eval-btn').disabled = true;
       $('eval-btn').textContent = '▶ Start Value Iteration';
+      $('random-eval-btn').disabled = true;
+      $('random-eval-btn').textContent = 'Random Policy Evaluation';
       // Reset hot-edit card UI
       $('btn-hot-edit').classList.remove('hidden');
       $('hot-controls').classList.add('hidden');
@@ -1505,6 +1587,8 @@
       $('converge-badge').classList.add('hidden');
       $('eval-btn').disabled = true;
       $('eval-btn').textContent = '▶ Start Value Iteration';
+      $('random-eval-btn').disabled = true;
+      $('random-eval-btn').textContent = 'Random Policy Evaluation';
       setActiveMode('start');
       buildGrid();
     });
