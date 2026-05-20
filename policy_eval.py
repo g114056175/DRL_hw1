@@ -40,6 +40,69 @@ def generate_random_policy(n, obstacles, start, end):
 
 
 # ── 從 V 推導最優策略 ────────────────────────────────────
+def random_policy_evaluation_steps(
+        n, obstacles, start, end, gamma=GAMMA, theta=THETA, max_iter=MAX_ITER):
+    """
+    Evaluate a fixed random policy.
+    The policy is generated once and then kept unchanged during all updates.
+    """
+    obstacle_set = set(map(tuple, obstacles))
+    start_t = tuple(start)
+    end_t = tuple(end)
+
+    policy = generate_random_policy(n, obstacles, start, end)
+    arrow_to_action = {v: k for k, v in ARROWS.items()}
+
+    V = {(r, c): 0.0 for r in range(n) for c in range(n)}
+    steps = [{
+        "values": {f"{r},{c}": round(V[(r, c)], 4) for r in range(n) for c in range(n)},
+        "policy": policy,
+        "path": [f"{start_t[0]},{start_t[1]}"],
+        "delta": None,
+        "iteration": 0,
+        "converged": False,
+    }]
+
+    for iteration in range(1, max_iter + 1):
+        new_V = dict(V)
+        delta = 0.0
+
+        for r in range(n):
+            for c in range(n):
+                cell = (r, c)
+                if cell == end_t or cell in obstacle_set:
+                    continue
+
+                arrow = policy[f"{r},{c}"]
+                action = arrow_to_action.get(arrow)
+                dr, dc = DELTAS[action]
+                nr, nc = r + dr, c + dc
+                if (nr < 0 or nr >= n or nc < 0 or nc >= n or
+                        (nr, nc) in obstacle_set):
+                    nr, nc = r, c
+
+                reward = R_GOAL if (nr, nc) == end_t else R_STEP
+                val = reward + gamma * V[(nr, nc)]
+                delta = max(delta, abs(val - V[cell]))
+                new_V[cell] = val
+
+        V = new_V
+        converged = (delta < theta)
+        steps.append({
+            "values": {f"{r},{c}": round(V[(r, c)], 4) for r in range(n) for c in range(n)},
+            "policy": policy,
+            "path": _get_path(n, V, obstacle_set, start_t, end_t, gamma),
+            "delta": round(delta, 8),
+            "iteration": iteration,
+            "converged": converged,
+        })
+
+        if converged:
+            break
+
+    return steps
+
+
 def _derive_policy(n, V, obstacle_set, end_t, gamma=GAMMA):
     """
     對每個 free cell 取 argmax_a Q(s,a)，回傳最優箭頭字典。
