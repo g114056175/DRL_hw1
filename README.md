@@ -51,6 +51,11 @@ An interactive **nxn Grid World** web application built with **Flask** and purel
 | ![HotEdit](img/image5.png) | ![Branch](img/image6.png) |
 | *Modifying map while keeping weights* | *New convergence after modified map* |
 
+| 7. Random Policy Setup | 8. Random Policy Evaluation |
+|:---:|:---:|
+| ![RandomPolicySetup](img/image7.png) | ![RandomPolicyEval](img/image8.png) |
+| *Generate one random action policy over the grid* | *Evaluate V(s) under the fixed random policy* |
+
 ---
 
 ## 🖥️ Features
@@ -73,6 +78,15 @@ An interactive **nxn Grid World** web application built with **Flask** and purel
   - Slide through iterations visually step-by-step.
   - Auto-play or scrub manually.
   
+### HW1-2 Supplement: Random Policy Evaluation
+- Added **Random Policy Evaluation** button in the Actions panel.
+- This mode first generates one random policy (up/down/left/right arrows on free cells).
+- Then it runs iterative **policy evaluation** with that policy fixed (policy does not change during updates).
+- The UI displays:
+  - step 0 random policy,
+  - per-step value updates `V(s)`,
+  - convergence iteration for this random policy.
+
 ### **🧪 Hot Edit Branching**
 - Pause at *any* intermediate step, hit **Hot Edit**.
 - Clear/Add obstacles seamlessly, hit **Run Branch**.
